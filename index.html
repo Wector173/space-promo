@@ -1,1 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Космос — Главная</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a1a;
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+        }
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 30, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            padding: 1rem;
+            gap: 2rem;
+        }
+        nav a {
+            color: #aaccff;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+        nav a:hover { color: #fff; text-shadow: 0 0 10px #aaccff; }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        .hero {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            top: 45vh;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            text-shadow: 0 0 30px #4a8eff;
+            animation: fadeIn 2s ease-out;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            margin-top: 1rem;
+            color: #aaccff;
+            animation: fadeIn 3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #ship {
+            position: absolute;
+            z-index: 20;
+            font-size: 2.5rem;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 0 15px cyan;
+            transition: transform 0.05s linear;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html">Главная</a>
+        <a href="planets.html">Планеты</a>
+        <a href="gallery.html">Галерея</a>
+    </nav>
+    <canvas id="starCanvas"></canvas>
+    <div class="hero">
+        <h1>Открой бескрайний космос</h1>
+        <p>Почувствуй движение галактик</p>
+    </div>
+    <div id="ship">🚀</div>
 
+    <script>
+        (function() {
+            const canvas = document.getElementById('starCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+
+            // Параметры звёзд
+            const stars = [];
+            const STAR_COUNT = 300;
+            let mouseX = 0, mouseY = 0;
+            let targetMouseX = 0, targetMouseY = 0;
+
+            // Параметры корабля
+            const ship = document.getElementById('ship');
+            let shipX = window.innerWidth / 2;
+            let shipY = window.innerHeight / 2;
+            const shipSpeed = 8;
+            const keys = {};
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                stars.length = 0;
+                for (let i = 0; i < STAR_COUNT; i++) {
+                    stars.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 2.5 + 0.5,
+                        baseX: Math.random() * width,
+                        baseY: Math.random() * height,
+                        speed: Math.random() * 0.02 + 0.005
+                    });
+                }
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            // Отслеживание мыши
+            document.addEventListener('mousemove', e => {
+                targetMouseX = e.clientX;
+                targetMouseY = e.clientY;
+            });
+
+            // Клик — вспышка падающей звезды
+            canvas.addEventListener('click', e => {
+                const x = e.clientX, y = e.clientY;
+                for (let i = 0; i < 15; i++) {
+                    stars.push({
+                        x: x, y: y,
+                        radius: Math.random() * 3 + 1,
+                        baseX: x + (Math.random() - 0.5) * 200,
+                        baseY: y + (Math.random() - 0.5) * 200,
+                        speed: 0.05 + Math.random() * 0.1,
+                        life: 1.0
+                    });
+                }
+            });
+
+            // Клавиатура для корабля
+            window.addEventListener('keydown', e => keys[e.key] = true);
+            window.addEventListener('keyup', e => keys[e.key] = false);
+
+            function updateShip() {
+                if (keys['ArrowUp'] || keys['w']) shipY -= shipSpeed;
+                if (keys['ArrowDown'] || keys['s']) shipY += shipSpeed;
+                if (keys['ArrowLeft'] || keys['a']) shipX -= shipSpeed;
+                if (keys['ArrowRight'] || keys['d']) shipX += shipSpeed;
+
+                shipX = Math.max(30, Math.min(width - 30, shipX));
+                shipY = Math.max(30, Math.min(height - 30, shipY));
+                ship.style.left = shipX + 'px';
+                ship.style.top = shipY + 'px';
+            }
+
+            function animate() {
+                // Плавное движение мыши для параллакса
+                mouseX += (targetMouseX - mouseX) * 0.05;
+                mouseY += (targetMouseY - mouseY) * 0.05;
+
+                ctx.clearRect(0, 0, width, height);
+
+                // Рисуем звёзды с параллаксом
+                for (let i = stars.length - 1; i >= 0; i--) {
+                    const s = stars[i];
+                    // Параллакс: звезда смещается в сторону мыши пропорционально глубине
+                    const depth = s.speed * 200;
+                    const dx = (mouseX - width/2) * depth * 0.001;
+                    const dy = (mouseY - height/2) * depth * 0.001;
+                    const drawX = s.baseX + dx;
+                    const drawY = s.baseY + dy;
+
+                    // Если звезда временная (от клика), двигаем и уменьшаем
+                    if (s.life !== undefined) {
+                        s.life -= 0.02;
+                        s.baseX += (s.baseX - mouseX) * s.speed;
+                        s.baseY += (s.baseY - mouseY) * s.speed;
+                        if (s.life <= 0) {
+                            stars.splice(i, 1);
+                            continue;
+                        }
+                        ctx.globalAlpha = s.life;
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(drawX, drawY, s.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fff';
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                // Мерцание некоторых звёзд (имитация)
+                // (оставлено как есть, параллакс уже даёт эффект)
+
+                updateShip();
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        })();
+    </script>
+</body>
+</html>

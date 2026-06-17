@@ -1,1 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Галерея космоса</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            background: #030314;
+            font-family: 'Orbitron', sans-serif;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        nav {
+            position: fixed;
+            top: 0; width: 100%;
+            background: rgba(3,3,20,0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex; justify-content: center;
+            padding: 1rem; gap: 2rem;
+        }
+        nav a { color: #aaccff; text-decoration: none; font-weight: bold; }
+        nav a:hover { color: #fff; text-shadow: 0 0 10px cyan; }
+        .slider-container {
+            width: 80%;
+            max-width: 900px;
+            height: 60vh;
+            position: relative;
+            perspective: 1000px;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(74,142,255,0.4);
+            cursor: grab;
+        }
+        .slider-container:active { cursor: grabbing; }
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+            transform-style: preserve-3d;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 3rem;
+            border-radius: 20px;
+        }
+        .slide::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(transparent 60%, rgba(0,0,0,0.7));
+            border-radius: 20px;
+        }
+        .slide-title {
+            position: relative;
+            z-index: 2;
+            font-size: 2rem;
+            text-shadow: 0 0 20px black;
+        }
+        .controls {
+            margin-top: 2rem;
+            display: flex;
+            gap: 2rem;
+        }
+        .controls button {
+            background: rgba(74,142,255,0.2);
+            border: 1px solid #4a8eff;
+            color: white;
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .controls button:hover { background: #4a8eff; }
+        .hint {
+            margin-top: 1rem;
+            color: #aaa;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html">Главная</a>
+        <a href="planets.html">Планеты</a>
+        <a href="gallery.html">Галерея</a>
+    </nav>
 
+    <div class="slider-container" id="slider">
+        <div class="slide" id="slide1"></div>
+        <div class="slide" id="slide2"></div>
+        <div class="slide" id="slide3"></div>
+    </div>
+    <div class="controls">
+        <button id="prevBtn">&#10094;</button>
+        <button id="nextBtn">&#10095;</button>
+    </div>
+    <div class="hint">← → стрелки на клавиатуре | двигайте мышью для параллакса</div>
+
+    <script>
+        (function() {
+            const container = document.getElementById('slider');
+            const slides = [
+                { id: 'slide1', gradient: 'radial-gradient(circle at 30% 40%, #1a0b2e, #000)', title: 'Туманность Ориона' },
+                { id: 'slide2', gradient: 'radial-gradient(circle at 70% 60%, #0f2027, #203a43, #2c5364)', title: 'Галактика Андромеды' },
+                { id: 'slide3', gradient: 'radial-gradient(circle at 50% 50%, #3b0e4b, #0a001a)', title: 'Скопление Плеяды' }
+            ];
+
+            let current = 0;
+            const slideElements = slides.map(s => document.getElementById(s.id));
+            let mouseX = 0, mouseY = 0;
+            let animationFrame;
+
+            // Задаём фоны
+            slides.forEach((s, i) => {
+                slideElements[i].style.background = s.gradient;
+                slideElements[i].querySelector('.slide-title')?.remove();
+                const title = document.createElement('div');
+                title.className = 'slide-title';
+                title.textContent = s.title;
+                slideElements[i].appendChild(title);
+            });
+
+            function updateSlides() {
+                slideElements.forEach((el, idx) => {
+                    const offset = idx - current;
+                    el.style.transform = `translateX(${offset * 100}%) scale(${offset === 0 ? 1 : 0.9})`;
+                    el.style.zIndex = offset === 0 ? 2 : 1;
+                    el.style.opacity = offset === 0 ? 1 : 0.4;
+                    el.style.pointerEvents = offset === 0 ? 'auto' : 'none';
+                });
+                applyParallax();
+            }
+
+            function applyParallax() {
+                // Применяем поворот для активного слайда
+                const activeSlide = slideElements[current];
+                if (activeSlide) {
+                    const rotateY = ((mouseX / container.offsetWidth) - 0.5) * 12;
+                    const rotateX = ((mouseY / container.offsetHeight) - 0.5) * -8;
+                    activeSlide.style.transform = `translateX(0%) scale(1) rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+                }
+            }
+
+            container.addEventListener('mousemove', e => {
+                const rect = container.getBoundingClientRect();
+                mouseX = e.clientX - rect.left;
+                mouseY = e.clientY - rect.top;
+                if (animationFrame) cancelAnimationFrame(animationFrame);
+                animationFrame = requestAnimationFrame(applyParallax);
+            });
+
+            container.addEventListener('mouseleave', () => {
+                mouseX = container.offsetWidth / 2;
+                mouseY = container.offsetHeight / 2;
+                applyParallax();
+            });
+
+            function next() {
+                current = (current + 1) % slides.length;
+                updateSlides();
+            }
+            function prev() {
+                current = (current - 1 + slides.length) % slides.length;
+                updateSlides();
+            }
+
+            document.getElementById('nextBtn').addEventListener('click', next);
+            document.getElementById('prevBtn').addEventListener('click', prev);
+
+            window.addEventListener('keydown', e => {
+                if (e.key === 'ArrowRight') next();
+                if (e.key === 'ArrowLeft') prev();
+            });
+
+            // Инициализация
+            updateSlides();
+        })();
+    </script>
+</body>
+</html>

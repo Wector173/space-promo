@@ -113,10 +113,23 @@
     <script>
         (function() {
             const container = document.getElementById('slider');
+            // --- Замените ссылки на свои или используйте готовые ---
             const slides = [
-                { id: 'slide1', gradient: 'radial-gradient(circle at 30% 40%, #1a0b2e, #000)', title: 'Туманность Ориона' },
-                { id: 'slide2', gradient: 'radial-gradient(circle at 70% 60%, #0f2027, #203a43, #2c5364)', title: 'Галактика Андромеды' },
-                { id: 'slide3', gradient: 'radial-gradient(circle at 50% 50%, #3b0e4b, #0a001a)', title: 'Скопление Плеяды' }
+                { 
+                    id: 'slide1', 
+                    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg/1280px-Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg',
+                    title: 'Туманность Ориона' 
+                },
+                { 
+                    id: 'slide2', 
+                    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/NGC_4414_%28NASA-med%29.jpg/1280px-NGC_4414_%28NASA-med%29.jpg',  // Галактика похожая на Андромеду, можно заменить
+                    title: 'Галактика Андромеды' 
+                },
+                { 
+                    id: 'slide3', 
+                    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Pleiades_large.jpg/1280px-Pleiades_large.jpg',
+                    title: 'Скопление Плеяды' 
+                }
             ];
 
             let current = 0;
@@ -124,13 +137,13 @@
             let mouseX = 0, mouseY = 0;
             let animationFrame;
 
-            // Задаём фоны
+            // Применяем фоновые изображения
             slides.forEach((s, i) => {
-                slideElements[i].style.background = s.gradient;
-                slideElements[i].querySelector('.slide-title')?.remove();
+                slideElements[i].style.backgroundImage = `url('${s.image}')`;
                 const title = document.createElement('div');
                 title.className = 'slide-title';
                 title.textContent = s.title;
+                slideElements[i].innerHTML = ''; // очищаем, если были старые title
                 slideElements[i].appendChild(title);
             });
 
@@ -146,7 +159,6 @@
             }
 
             function applyParallax() {
-                // Применяем поворот для активного слайда
                 const activeSlide = slideElements[current];
                 if (activeSlide) {
                     const rotateY = ((mouseX / container.offsetWidth) - 0.5) * 12;
@@ -186,7 +198,6 @@
                 if (e.key === 'ArrowLeft') prev();
             });
 
-            // Инициализация
             updateSlides();
         })();
     </script>
